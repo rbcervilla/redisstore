@@ -54,7 +54,14 @@ func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error
 	opts := s.options
 	session.Options = &opts
 	session.IsNew = true
-	err := s.load(session)
+
+	c, err := r.Cookie(name)
+	if err != nil {
+		return session, nil
+	}
+	session.ID = c.Value
+
+	err = s.load(session)
 	if err == nil {
 		session.IsNew = false
 	} else if err == redis.Nil {

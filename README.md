@@ -7,7 +7,7 @@ It uses [`go-redis`](https://github.com/go-redis/redis) as client to connect to 
 ## Example
 ``` go
 client := redis.NewClient(&redis.Options{
-    Addr:     redisAddr,
+    Addr:     "localhost:6379",
 })
 
 // New default RedisStore
