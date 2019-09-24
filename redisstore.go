@@ -17,7 +17,7 @@ import (
 // RedisStore stores gorilla sessions in Redis
 type RedisStore struct {
 	// client to connect to redis
-	client *redis.Client
+	client redis.UniversalClient
 	// default options to use when a new session is created
 	options sessions.Options
 	// key prefix with which the session will be stored
@@ -27,7 +27,7 @@ type RedisStore struct {
 }
 
 // NewRedisStore returns a new RedisStore with default configuration
-func NewRedisStore(client *redis.Client) (*RedisStore, error) {
+func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
 
 	rs := &RedisStore{
 		options: sessions.Options{
