@@ -22,9 +22,14 @@ type RedisStore struct {
 	options sessions.Options
 	// key prefix with which the session will be stored
 	keyPrefix string
+	// key generator
+	keyGen KeyGenFunc
 	// session serializer
 	serializer SessionSerializer
 }
+
+// KeyGenFunc defines a function used by store to generate a key
+type KeyGenFunc func() (string, error)
 
 // NewRedisStore returns a new RedisStore with default configuration
 func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
@@ -36,6 +41,7 @@ func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
 		},
 		client:     client,
 		keyPrefix:  "session:",
+		keyGen:     generateRandomKey,
 		serializer: GobSerializer{},
 	}
 
@@ -87,7 +93,7 @@ func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 	}
 
 	if session.ID == "" {
-		id, err := generateRandomKey()
+		id, err := s.keyGen()
 		if err != nil {
 			return errors.New("redisstore: failed to generate session id")
 		}
@@ -109,6 +115,11 @@ func (s *RedisStore) Options(opts sessions.Options) {
 // KeyPrefix sets the key prefix to store session in Redis
 func (s *RedisStore) KeyPrefix(keyPrefix string) {
 	s.keyPrefix = keyPrefix
+}
+
+// KeyGen sets the key generator function
+func (s *RedisStore) KeyGen(f KeyGenFunc) {
+	s.keyGen = f
 }
 
 // Serializer sets the session serializer to store session
