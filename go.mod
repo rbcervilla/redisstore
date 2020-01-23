@@ -1,4 +1,4 @@
-module github.com/rbcervilla/redisstore
+module github.com/gametimesf/redisstore
 
 go 1.12
 
