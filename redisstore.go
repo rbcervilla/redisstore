@@ -2,16 +2,16 @@ package redisstore
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/base32"
 	"encoding/gob"
 	"errors"
-	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
-	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 )
 
 // RedisStore stores gorilla sessions in Redis
@@ -26,13 +26,15 @@ type RedisStore struct {
 	keyGen KeyGenFunc
 	// session serializer
 	serializer SessionSerializer
+	// securecookie codecs
+	codecs []securecookie.Codec
 }
 
 // KeyGenFunc defines a function used by store to generate a key
 type KeyGenFunc func() (string, error)
 
 // NewRedisStore returns a new RedisStore with default configuration
-func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
+func NewRedisStore(client redis.UniversalClient, keyPairs ...[]byte) (*RedisStore, error) {
 
 	rs := &RedisStore{
 		options: sessions.Options{
@@ -43,6 +45,7 @@ func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
 		keyPrefix:  "session:",
 		keyGen:     generateRandomKey,
 		serializer: GobSerializer{},
+		codecs:     securecookie.CodecsFromPairs(keyPairs...),
 	}
 
 	return rs, rs.client.Ping().Err()
@@ -65,7 +68,11 @@ func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error
 	if err != nil {
 		return session, nil
 	}
-	session.ID = c.Value
+
+	err = securecookie.DecodeMulti(name, c.Value, &session.ID, s.codecs...)
+	if err != nil {
+		return session, err
+	}
 
 	err = s.load(session)
 	if err == nil {
@@ -103,7 +110,12 @@ func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 		return err
 	}
 
-	http.SetCookie(w, sessions.NewCookie(session.Name(), session.ID, session.Options))
+	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, s.codecs...)
+	if err != nil {
+		return err
+	}
+
+	http.SetCookie(w, sessions.NewCookie(session.Name(), encoded, session.Options))
 	return nil
 }
 
@@ -125,6 +137,11 @@ func (s *RedisStore) KeyGen(f KeyGenFunc) {
 // Serializer sets the session serializer to store session
 func (s *RedisStore) Serializer(ss SessionSerializer) {
 	s.serializer = ss
+}
+
+// Codecs sets the secure cookie codecs
+func (s *RedisStore) Codecs(keyPairs ...[]byte) {
+	s.codecs = securecookie.CodecsFromPairs(keyPairs...)
 }
 
 // save writes session in Redis
@@ -185,9 +202,5 @@ func (gs GobSerializer) Deserialize(d []byte, s *sessions.Session) error {
 
 // generateRandomKey returns a new random key
 func generateRandomKey() (string, error) {
-	k := make([]byte, 64)
-	if _, err := io.ReadFull(rand.Reader, k); err != nil {
-		return "", err
-	}
-	return strings.TrimRight(base32.StdEncoding.EncodeToString(k), "="), nil
+	return strings.TrimRight(base32.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(64)), "="), nil
 }
