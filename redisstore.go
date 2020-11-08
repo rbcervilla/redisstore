@@ -2,11 +2,12 @@ package redisstore
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/gob"
 	"errors"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
@@ -45,7 +46,24 @@ func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
 		serializer: GobSerializer{},
 	}
 
-	return rs, rs.client.Ping().Err()
+	return rs, rs.client.Ping(context.TODO()).Err()
+}
+
+// NewRedisStoreWithContext returns a new RedisStore with default configuration
+func NewRedisStoreWithContext(ctx context.Context, client redis.UniversalClient) (*RedisStore, error) {
+
+	rs := &RedisStore{
+		options: sessions.Options{
+			Path:   "/",
+			MaxAge: 86400 * 30,
+		},
+		client:     client,
+		keyPrefix:  "session:",
+		keyGen:     generateRandomKey,
+		serializer: GobSerializer{},
+	}
+
+	return rs, rs.client.Ping(ctx).Err()
 }
 
 // Get returns a session for the given name after adding it to the registry.
@@ -67,7 +85,7 @@ func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error
 	}
 	session.ID = c.Value
 
-	err = s.load(session)
+	err = s.load(r.Context(), session)
 	if err == nil {
 		session.IsNew = false
 	} else if err == redis.Nil {
@@ -85,7 +103,7 @@ func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error
 func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
 	// Delete if max-age is <= 0
 	if session.Options.MaxAge <= 0 {
-		if err := s.delete(session); err != nil {
+		if err := s.delete(r.Context(), session); err != nil {
 			return err
 		}
 		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
@@ -99,7 +117,7 @@ func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 		}
 		session.ID = id
 	}
-	if err := s.save(session); err != nil {
+	if err := s.save(r.Context(), session); err != nil {
 		return err
 	}
 
@@ -128,20 +146,20 @@ func (s *RedisStore) Serializer(ss SessionSerializer) {
 }
 
 // save writes session in Redis
-func (s *RedisStore) save(session *sessions.Session) error {
+func (s *RedisStore) save(ctx context.Context, session *sessions.Session) error {
 
 	b, err := s.serializer.Serialize(session)
 	if err != nil {
 		return err
 	}
 
-	return s.client.Set(s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
+	return s.client.Set(ctx, s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
 }
 
 // load reads session from Redis
-func (s *RedisStore) load(session *sessions.Session) error {
+func (s *RedisStore) load(ctx context.Context, session *sessions.Session) error {
 
-	cmd := s.client.Get(s.keyPrefix + session.ID)
+	cmd := s.client.Get(ctx, s.keyPrefix+session.ID)
 	if cmd.Err() != nil {
 		return cmd.Err()
 	}
@@ -155,8 +173,8 @@ func (s *RedisStore) load(session *sessions.Session) error {
 }
 
 // delete deletes session in Redis
-func (s *RedisStore) delete(session *sessions.Session) error {
-	return s.client.Del(s.keyPrefix + session.ID).Err()
+func (s *RedisStore) delete(ctx context.Context, session *sessions.Session) error {
+	return s.client.Del(ctx, s.keyPrefix+session.ID).Err()
 }
 
 // SessionSerializer provides an interface for serialize/deserialize a session

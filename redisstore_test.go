@@ -1,7 +1,7 @@
 package redisstore
 
 import (
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/sessions"
 	"net/http"
 	"net/http/httptest"
