@@ -33,24 +33,7 @@ type RedisStore struct {
 type KeyGenFunc func() (string, error)
 
 // NewRedisStore returns a new RedisStore with default configuration
-func NewRedisStore(client redis.UniversalClient) (*RedisStore, error) {
-
-	rs := &RedisStore{
-		options: sessions.Options{
-			Path:   "/",
-			MaxAge: 86400 * 30,
-		},
-		client:     client,
-		keyPrefix:  "session:",
-		keyGen:     generateRandomKey,
-		serializer: GobSerializer{},
-	}
-
-	return rs, rs.client.Ping(context.TODO()).Err()
-}
-
-// NewRedisStoreWithContext returns a new RedisStore with default configuration
-func NewRedisStoreWithContext(ctx context.Context, client redis.UniversalClient) (*RedisStore, error) {
+func NewRedisStore(ctx context.Context, client redis.UniversalClient) (*RedisStore, error) {
 
 	rs := &RedisStore{
 		options: sessions.Options{

@@ -10,6 +10,7 @@ It uses [`go-redis v8`](https://github.com/go-redis/redis) as client to connect 
 package main
 
 import (
+    "context"
     "github.com/go-redis/redis/v8"
     "github.com/gorilla/sessions"
     "github.com/rbcervilla/redisstore/v8"
@@ -25,7 +26,7 @@ func main() {
     })
 
     // New default RedisStore
-    store, err := redisstore.NewRedisStore(client)
+    store, err := redisstore.NewRedisStore(context.Background(), client)
     if err != nil {
         log.Fatal("failed to create redis store: ", err)
     }

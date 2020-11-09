@@ -1,6 +1,7 @@
 package redisstore
 
 import (
+	"context"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -18,7 +19,7 @@ func TestNew(t *testing.T) {
 		Addr: redisAddr,
 	})
 
-	store, err := NewRedisStore(client)
+	store, err := NewRedisStore(context.Background(), client)
 	if err != nil {
 		t.Fatal("failed to create redis store", err)
 	}
@@ -43,7 +44,7 @@ func TestOptions(t *testing.T) {
 		Addr: redisAddr,
 	})
 
-	store, err := NewRedisStore(client)
+	store, err := NewRedisStore(context.Background(), client)
 	if err != nil {
 		t.Fatal("failed to create redis store", err)
 	}
@@ -71,7 +72,7 @@ func TestSave(t *testing.T) {
 		Addr: redisAddr,
 	})
 
-	store, err := NewRedisStore(client)
+	store, err := NewRedisStore(context.Background(), client)
 	if err != nil {
 		t.Fatal("failed to create redis store", err)
 	}
@@ -100,7 +101,7 @@ func TestDelete(t *testing.T) {
 		Addr: redisAddr,
 	})
 
-	store, err := NewRedisStore(client)
+	store, err := NewRedisStore(context.Background(), client)
 	if err != nil {
 		t.Fatal("failed to create redis store", err)
 	}
