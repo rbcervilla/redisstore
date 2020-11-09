@@ -2,7 +2,7 @@
 
 A [`Gorilla Sessions Store`](https://www.gorillatoolkit.org/pkg/sessions#Store) implementation backed by Redis.
 
-It uses [`go-redis`](https://github.com/go-redis/redis) as client to connect to Redis.
+It uses [`go-redis v8`](https://github.com/go-redis/redis) as client to connect to Redis.
 
 ## Example
 ```go
@@ -10,9 +10,10 @@ It uses [`go-redis`](https://github.com/go-redis/redis) as client to connect to 
 package main
 
 import (
-    "github.com/go-redis/redis"
+    "context"
+    "github.com/go-redis/redis/v8"
     "github.com/gorilla/sessions"
-    "github.com/rbcervilla/redisstore"
+    "github.com/rbcervilla/redisstore/v8"
     "log"
     "net/http"
     "net/http/httptest"
@@ -25,7 +26,7 @@ func main() {
     })
 
     // New default RedisStore
-    store, err := redisstore.NewRedisStore(client)
+    store, err := redisstore.NewRedisStore(context.Background(), client)
     if err != nil {
         log.Fatal("failed to create redis store: ", err)
     }
