@@ -141,12 +141,12 @@ func TestClose(t *testing.T) {
 		t.Fatal("connection is not opened")
 	}
 
-	_, err = NewRedisStore(context.Background(), client)
+	store, err := NewRedisStore(context.Background(), client)
 	if err != nil {
 		t.Fatal("failed to create redis store", err)
 	}
 
-	err = client.Close()
+	err = store.Close()
 	if err != nil {
 		t.Fatal("failed to close")
 	}
