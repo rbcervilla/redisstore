@@ -128,8 +128,8 @@ func (s *RedisStore) Serializer(ss SessionSerializer) {
 	s.serializer = ss
 }
 
-func (s *RedisStore) Close() {
-	s.Close()
+func (s *RedisStore) Close() error {
+	return s.client.Close()
 }
 
 // save writes session in Redis
