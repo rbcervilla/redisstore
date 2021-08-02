@@ -129,3 +129,30 @@ func TestDelete(t *testing.T) {
 		t.Fatal("failed to delete session: ", err)
 	}
 }
+
+func TestClose(t *testing.T) {
+	client := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+
+	cmd := client.Ping(context.Background())
+	err := cmd.Err()
+	if err != nil {
+		t.Fatal("connection is not opened")
+	}
+
+	store, err := NewRedisStore(context.Background(), client)
+	if err != nil {
+		t.Fatal("failed to create redis store", err)
+	}
+
+	err = store.Close()
+	if err != nil {
+		t.Fatal("failed to close")
+	}
+
+	cmd = client.Ping(context.Background())
+	if cmd.Err() == nil {
+		t.Fatal("connection is properly closed")
+	}
+}
