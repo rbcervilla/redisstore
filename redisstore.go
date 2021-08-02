@@ -128,6 +128,7 @@ func (s *RedisStore) Serializer(ss SessionSerializer) {
 	s.serializer = ss
 }
 
+// Close closes the Redis store
 func (s *RedisStore) Close() error {
 	return s.client.Close()
 }
