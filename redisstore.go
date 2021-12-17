@@ -80,7 +80,7 @@ func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error
 // Save adds a single session to the response.
 //
 // If the Options.MaxAge of the session is <= 0 then the session file will be
-// deleted from the store. With this process it enforces the properly
+// deleted from the store. With this process it enforces the proper
 // session cookie handling so no need to trust in the cookie management in the
 // web browser.
 func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
@@ -171,7 +171,7 @@ type SessionSerializer interface {
 	Deserialize(b []byte, s *sessions.Session) error
 }
 
-// Gob serializer
+// GobSerializer Gob serializer
 type GobSerializer struct{}
 
 func (gs GobSerializer) Serialize(s *sessions.Session) ([]byte, error) {
