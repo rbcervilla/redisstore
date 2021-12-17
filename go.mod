@@ -1,4 +1,4 @@
-module github.com/rbcervilla/redisstore/v8
+module github.com/phuongdpham/redisstore/v8
 
 go 1.17
 
