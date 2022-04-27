@@ -2,11 +2,13 @@ package redisstore
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
-	"github.com/gorilla/sessions"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 )
 
 const (
@@ -67,66 +69,106 @@ func TestOptions(t *testing.T) {
 }
 
 func TestSave(t *testing.T) {
-
-	client := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
-
-	store, err := NewRedisStore(context.Background(), client)
-	if err != nil {
-		t.Fatal("failed to create redis store", err)
+	type fields struct {
+		codecs []securecookie.Codec
 	}
-
-	req, err := http.NewRequest("GET", "http://www.example.com", nil)
-	if err != nil {
-		t.Fatal("failed to create request", err)
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "standard cookie",
+		},
+		{
+			name: "secure cookie",
+			fields: fields{
+				codecs: securecookie.CodecsFromPairs(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32)),
+			},
+		},
 	}
-	w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := redis.NewClient(&redis.Options{
+				Addr: redisAddr,
+			})
 
-	session, err := store.New(req, "hello")
-	if err != nil {
-		t.Fatal("failed to create session", err)
-	}
+			store, err := NewRedisStore(context.Background(), client, tt.fields.codecs...)
+			if err != nil {
+				t.Fatal("failed to create redis store", err)
+			}
 
-	session.Values["key"] = "value"
-	err = session.Save(req, w)
-	if err != nil {
-		t.Fatal("failed to save: ", err)
+			req, err := http.NewRequest("GET", "http://www.example.com", nil)
+			if err != nil {
+				t.Fatal("failed to create request", err)
+			}
+			w := httptest.NewRecorder()
+
+			session, err := store.New(req, "hello")
+			if err != nil {
+				t.Fatal("failed to create session", err)
+			}
+
+			session.Values["key"] = "value"
+			err = session.Save(req, w)
+			if err != nil {
+				t.Fatal("failed to save: ", err)
+			}
+		})
 	}
 }
 
 func TestDelete(t *testing.T) {
-
-	client := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
-
-	store, err := NewRedisStore(context.Background(), client)
-	if err != nil {
-		t.Fatal("failed to create redis store", err)
+	type fields struct {
+		codecs []securecookie.Codec
 	}
-
-	req, err := http.NewRequest("GET", "http://www.example.com", nil)
-	if err != nil {
-		t.Fatal("failed to create request", err)
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "standard cookie",
+		},
+		{
+			name: "secure cookie",
+			fields: fields{
+				codecs: securecookie.CodecsFromPairs(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32)),
+			},
+		},
 	}
-	w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := redis.NewClient(&redis.Options{
+				Addr: redisAddr,
+			})
 
-	session, err := store.New(req, "hello")
-	if err != nil {
-		t.Fatal("failed to create session", err)
-	}
+			store, err := NewRedisStore(context.Background(), client, tt.fields.codecs...)
+			if err != nil {
+				t.Fatal("failed to create redis store", err)
+			}
 
-	session.Values["key"] = "value"
-	err = session.Save(req, w)
-	if err != nil {
-		t.Fatal("failed to save session: ", err)
-	}
+			req, err := http.NewRequest("GET", "http://www.example.com", nil)
+			if err != nil {
+				t.Fatal("failed to create request", err)
+			}
+			w := httptest.NewRecorder()
 
-	session.Options.MaxAge = -1
-	err = session.Save(req, w)
-	if err != nil {
-		t.Fatal("failed to delete session: ", err)
+			session, err := store.New(req, "hello")
+			if err != nil {
+				t.Fatal("failed to create session", err)
+			}
+
+			session.Values["key"] = "value"
+			err = session.Save(req, w)
+			if err != nil {
+				t.Fatal("failed to save session: ", err)
+			}
+
+			session.Options.MaxAge = -1
+			err = session.Save(req, w)
+			if err != nil {
+				t.Fatal("failed to delete session: ", err)
+			}
+		})
 	}
 }
 

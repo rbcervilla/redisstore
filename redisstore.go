@@ -7,12 +7,14 @@ import (
 	"encoding/base32"
 	"encoding/gob"
 	"errors"
-	"github.com/go-redis/redis/v8"
-	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 )
 
 // RedisStore stores gorilla sessions in Redis
@@ -27,13 +29,15 @@ type RedisStore struct {
 	keyGen KeyGenFunc
 	// session serializer
 	serializer SessionSerializer
+	// codecs for securecookie encoding/decoding
+	codecs []securecookie.Codec
 }
 
 // KeyGenFunc defines a function used by store to generate a key
 type KeyGenFunc func() (string, error)
 
 // NewRedisStore returns a new RedisStore with default configuration
-func NewRedisStore(ctx context.Context, client redis.UniversalClient) (*RedisStore, error) {
+func NewRedisStore(ctx context.Context, client redis.UniversalClient, codecs ...securecookie.Codec) (*RedisStore, error) {
 
 	rs := &RedisStore{
 		options: sessions.Options{
@@ -44,6 +48,7 @@ func NewRedisStore(ctx context.Context, client redis.UniversalClient) (*RedisSto
 		keyPrefix:  "session:",
 		keyGen:     generateRandomKey,
 		serializer: GobSerializer{},
+		codecs:     codecs,
 	}
 
 	return rs, rs.client.Ping(ctx).Err()
@@ -104,7 +109,17 @@ func (s *RedisStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 		return err
 	}
 
-	http.SetCookie(w, sessions.NewCookie(session.Name(), session.ID, session.Options))
+	cookie := session.ID
+	if len(s.codecs) > 0 {
+		var err error
+		cookie, err = securecookie.EncodeMulti(session.Name(), session.ID, s.codecs...)
+		if err != nil {
+			return err
+		}
+	}
+
+	http.SetCookie(w, sessions.NewCookie(session.Name(), cookie, session.Options))
+
 	return nil
 }
 
