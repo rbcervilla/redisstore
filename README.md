@@ -2,7 +2,19 @@
 
 A [`Gorilla Sessions Store`](https://www.gorillatoolkit.org/pkg/sessions#Store) implementation backed by Redis.
 
-It uses [`go-redis v8`](https://github.com/go-redis/redis) as client to connect to Redis.
+It uses [`go-redis`](https://github.com/go-redis/redis) as client to connect to Redis.
+
+If you are using **Redis 6** (client go-redis/v8), install redisstore/v8:
+
+```shell
+go get github.com/rbcervilla/redisstore/v8
+```
+
+If you are using **Redis 7** (client go-redis/v9), install redisstore/v9:
+
+```shell
+go get github.com/rbcervilla/redisstore/v9
+```
 
 ## Example
 ```go
@@ -11,9 +23,9 @@ package main
 
 import (
     "context"
-    "github.com/go-redis/redis/v8"
+    "github.com/go-redis/redis/v9"
     "github.com/gorilla/sessions"
-    "github.com/rbcervilla/redisstore/v8"
+    "github.com/rbcervilla/redisstore/v9"
     "log"
     "net/http"
     "net/http/httptest"

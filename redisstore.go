@@ -7,7 +7,7 @@ import (
 	"encoding/base32"
 	"encoding/gob"
 	"errors"
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v9"
 	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
