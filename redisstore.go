@@ -7,12 +7,13 @@ import (
 	"encoding/base32"
 	"encoding/gob"
 	"errors"
-	"github.com/go-redis/redis/v9"
-	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/sessions"
+	"github.com/redis/go-redis/v9"
 )
 
 // RedisStore stores gorilla sessions in Redis
@@ -34,7 +35,6 @@ type KeyGenFunc func() (string, error)
 
 // NewRedisStore returns a new RedisStore with default configuration
 func NewRedisStore(ctx context.Context, client redis.UniversalClient) (*RedisStore, error) {
-
 	rs := &RedisStore{
 		options: sessions.Options{
 			Path:   "/",
@@ -56,7 +56,6 @@ func (s *RedisStore) Get(r *http.Request, name string) (*sessions.Session, error
 
 // New returns a session for the given name without adding it to the registry.
 func (s *RedisStore) New(r *http.Request, name string) (*sessions.Session, error) {
-
 	session := sessions.NewSession(s, name)
 	opts := s.options
 	session.Options = &opts
@@ -135,7 +134,6 @@ func (s *RedisStore) Close() error {
 
 // save writes session in Redis
 func (s *RedisStore) save(ctx context.Context, session *sessions.Session) error {
-
 	b, err := s.serializer.Serialize(session)
 	if err != nil {
 		return err
@@ -146,7 +144,6 @@ func (s *RedisStore) save(ctx context.Context, session *sessions.Session) error 
 
 // load reads session from Redis
 func (s *RedisStore) load(ctx context.Context, session *sessions.Session) error {
-
 	cmd := s.client.Get(ctx, s.keyPrefix+session.ID)
 	if cmd.Err() != nil {
 		return cmd.Err()

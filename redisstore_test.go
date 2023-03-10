@@ -2,11 +2,12 @@ package redisstore
 
 import (
 	"context"
-	"github.com/go-redis/redis/v9"
-	"github.com/gorilla/sessions"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/sessions"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -14,7 +15,6 @@ const (
 )
 
 func TestNew(t *testing.T) {
-
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
@@ -39,7 +39,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestOptions(t *testing.T) {
-
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
@@ -61,13 +60,15 @@ func TestOptions(t *testing.T) {
 	}
 
 	session, err := store.New(req, "hello")
+	if err != nil {
+		t.Fatal("failed to create store", err)
+	}
 	if session.Options.Path != opts.Path || session.Options.MaxAge != opts.MaxAge {
 		t.Fatal("failed to set options")
 	}
 }
 
 func TestSave(t *testing.T) {
-
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
@@ -96,7 +97,6 @@ func TestSave(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
